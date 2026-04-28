@@ -105,36 +105,15 @@ export default function App() {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
+    // 1. Carrega os cards estáticos assim que a tela abre e faz o scroll da tela
     useEffect(() => {
+        setInfoCards(MOCK_CARDS);
+        setIsLoadingCards(false);
         scrollToBottom();
     }, [messages, isTyping]);
 
-    // Carregar os cards informativos
-    useEffect(() => {
-        const fetchCards = async () => {
-            try {
-                setIsLoadingCards(true);
-                // Tentativa de chamada à API do Spring Boot
-                const response = await fetch('http://localhost:8080/api/informacoes-rapidas');
 
-                if (!response.ok) {
-                    throw new Error('Falha ao carregar dados do servidor');
-                }
-
-                const data = await response.json();
-                setInfoCards(data);
-            } catch (err) {
-                console.warn('Backend não detetado. A utilizar dados de simulação (Mock).');
-                // Fallback para o ambiente de testes
-                setInfoCards(MOCK_CARDS);
-            } finally {
-                setIsLoadingCards(false);
-            }
-        };
-
-        fetchCards();
-    }, []);
-
+    // 2. Função unificada que envia a mensagem para a nuvem
     const handleSendMessage = async (e) => {
         e?.preventDefault();
         if (!inputMessage.trim() || isTyping) return;
@@ -143,13 +122,13 @@ export default function App() {
         setInputMessage('');
         setError(null);
 
-        // Adiciona mensagem do utilizador
+        // Adiciona a mensagem do utilizador na tela imediatamente
         setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
         setIsTyping(true);
 
         try {
-            // Tentativa de chamada ao endpoint de Chat no Spring Boot
-            const response = await fetch('http://localhost:8080/api/chat', {
+            // Chamada ao teu servidor na nuvem (Railway)
+            const response = await fetch('https://infochat-backend-production.up.railway.app/api/chat', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -162,20 +141,23 @@ export default function App() {
             }
 
             const data = await response.json();
-            const aiResponse = data.resposta || data.content || data.mensagem;
 
+            // Pega especificamente a chave "resposta" que o teu Java envia no HashMap
+            const aiResponse = data.resposta;
+
+            // Adiciona a resposta da IA na tela
             setMessages(prev => [...prev, { role: 'ai', content: aiResponse }]);
 
         } catch (err) {
             console.warn('Erro na chamada ao backend de chat:', err);
-            // Fallback: Simulação da resposta do Spring AI se o backend falhar/não existir neste ambiente
+            // Fallback caso a nuvem caia
             setTimeout(() => {
                 setMessages(prev => [...prev, {
                     role: 'ai',
-                    content: 'Desculpe, neste momento estou a operar em modo de demonstração pois não consegui ligar ao servidor central em João Pessoa. O seu pedido foi: "' + userMsg + '". Como posso ajudar com as informações disponíveis?'
+                    content: 'Desculpe, falha ao conectar com o servidor central do Zoonoses. Tente novamente em alguns instantes.'
                 }]);
-                setError('Aviso: Operar em modo local. O servidor principal encontra-se inacessível.');
-            }, 1500);
+                setError('Erro de conexão com o servidor.');
+            }, 1000);
         } finally {
             setIsTyping(false);
         }
@@ -230,7 +212,7 @@ export default function App() {
                         {error && (
                             <div className="flex items-center gap-1 text-red-500 text-xs bg-red-50 px-2 py-1 rounded">
                                 <AlertCircle className="w-3 h-3" />
-                                <span>Modo Local</span>
+                                <span>Modo Offline</span>
                             </div>
                         )}
                     </div>
@@ -248,7 +230,7 @@ export default function App() {
                                     {msg.role === 'user' ? <User className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
                                 </div>
 
-                                {/* Balão de Mensagem CORRIGIDO AQUI */}
+                                {/* Balão de Mensagem */}
                                 <div className={`px-4 py-3 text-sm md:text-base shadow-sm ${msg.role === 'user'
                                         ? 'bg-orange-500 text-white rounded-2xl rounded-tr-sm'
                                         : 'bg-gray-100 text-gray-800 rounded-2xl rounded-tl-sm w-full prose prose-sm max-w-none'
