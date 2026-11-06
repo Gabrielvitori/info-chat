@@ -128,7 +128,7 @@ export default function App() {
 
         try {
             // Chamada ao teu servidor na nuvem (AWS EC2)
-            const response = await fetch('http://18.226.84.36:8080/api/chat', {
+            const response = await fetch('/api/chat',{
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
