@@ -127,8 +127,8 @@ export default function App() {
         setIsTyping(true);
 
         try {
-            // Chamada ao teu servidor na nuvem (Railway)
-            const response = await fetch('https://infochat-backend-production.up.railway.app/api/chat', {
+            // Chamada ao teu servidor na nuvem (AWS EC2)
+            const response = await fetch('http://18.226.84.36:8080/api/chat', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
